@@ -1,70 +1,105 @@
-import PropTypes from "prop-types";
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 
-const scrollStyle = (width, height = "3", bgcolor = "#F43059", duration = "1") => ({
-  margin: 0,
-  padding: 0,
+const scrollStyle = ({
+  width,
+  height = "3",
+  color = "red",
+  duration = "1",
+  zIndex = "99"
+}) => ({
   position: "fixed",
   top: 0,
-  zIndex: "99",
-  backgroundColor: `${bgcolor}`,
+  margin: 0,
+  padding: 0,
+  backgroundColor: color,
   height: `${height}px`,
-  width: `${width}`,
+  width,
   transitionProperty: "width",
   transitionDuration: `${duration}s`,
-  transitionTimingFunction: `ease-out`,
+  transitionTimingFunction: "ease-out",
+  zIndex
 });
+
+const getDocHeight = () =>
+  Math.max(
+    document.body.scrollHeight,
+    document.documentElement.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.offsetHeight,
+    document.body.clientHeight,
+    document.documentElement.clientHeight
+  );
+
+const calculateScrollDistance = debug => {
+  const scrollTop = window.pageYOffset || document.body.scrollTop;
+  const winHeight = window.innerHeight || document.body.clientHeight;
+  const docHeight = getDocHeight();
+  const totalDocScrollLength = docHeight - winHeight;
+  const scrollPos = Math.floor((scrollTop / totalDocScrollLength) * 100);
+  debug && console.log({ scrollPos });
+  return scrollPos;
+};
 
 class ProgressBar extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      width: null
+      width: "0"
     };
-    this.Scrolling = this.Scrolling.bind(this);
+    this.getScroll = this.getScroll.bind(this);
   }
 
-  Scrolling() {
-    const winScroll =
-      document.body.scrollTop || document.documentElement.scrollTop;
-    const height =
-      document.documentElement.scrollHeight -
-      document.documentElement.clientHeight;
-    const scrolled = (winScroll / height) * 100;
-    if (height > 0) {
-      this.setState({ width: `${scrolled}%` });
+  getScroll() {
+    const { debug } = this.props;
+    if (calculateScrollDistance() > 0) {
+      this.setState({ width: `${calculateScrollDistance(debug)}%` });
     } else {
-      this.setState({ width: null });
+      this.setState({ width: "0" });
     }
   }
 
   componentDidMount() {
+    const { debug } = this.props;
     try {
-      window.addEventListener("scroll", this.Scrolling);
+      window.addEventListener("scroll", this.getScroll);
     } catch (oError) {
-      console.log(oError);
+      debug && console.log(oError);
     }
   }
 
   componentWillUnmount() {
+    const { debug } = this.props;
     try {
-      window.removeEventListener("scroll", this.Scrolling);
+      window.removeEventListener("scroll", this.getScroll);
     } catch (oError) {
-      console.log(oError);
+      debug && console.log(oError);
     }
   }
 
   render() {
     const { width } = this.state;
-    const { height, bgcolor, duration } = this.props;
-    return <div style={scrollStyle(width, height, bgcolor, duration)} />;
+    const { height, color, duration, zIndex } = this.props;
+    return (
+      <div
+        style={scrollStyle({
+          width,
+          height,
+          color,
+          duration,
+          zIndex
+        })}
+      />
+    );
   }
 }
 
 ProgressBar.propTypes = {
-  height: PropTypes.number,
-  duration: PropTypes.number,
-  color: PropTypes.string.isRequired
+  debug: PropTypes.bool,
+  height: PropTypes.string,
+  duration: PropTypes.string,
+  color: PropTypes.string,
+  zIndex: PropTypes.string
 };
 
 export default ProgressBar;
